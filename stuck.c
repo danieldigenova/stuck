@@ -433,7 +433,7 @@ void move_actor(struct Actor* a, byte joystick) {
         if(a->x > ACTOR_MIN_X){
           a->x--;
           a->state = WALKING;
-        } else if(actor.roomx > 0 && (a->yy >= 10*8 && a->yy <= 15*8)){
+        } else if(actor.roomx > 0 && (a->yy >= 10*8 && a->yy <= 15*8) && a->name == ACTOR_PLAYER){
           actor.roomx--;
           vbright = 0;
           num_bullets = 0;
@@ -448,7 +448,7 @@ void move_actor(struct Actor* a, byte joystick) {
         if(a->x < ACTOR_MAX_X){
           a->x++;
           a->state = WALKING;
-        } else if(actor.roomx < MAX_X_ROOMS - 1 && (a->yy >= 10*8 && a->yy <= 15*8)){
+        } else if(actor.roomx < MAX_X_ROOMS - 1 && (a->yy >= 10*8 && a->yy <= 15*8) && a->name == ACTOR_PLAYER){
           actor.roomx++;
           vbright = 0;
           num_bullets = 0;
@@ -462,7 +462,7 @@ void move_actor(struct Actor* a, byte joystick) {
         if(a->yy < ACTOR_MAX_Y){
           a->yy++;
           a->state = WALKING2;
-        } else if(actor.roomy < MAX_Y_ROOMS - 1 && a->x >= 12*8 && a->x <= 17*8) {
+        } else if(actor.roomy < MAX_Y_ROOMS - 1 && a->x >= 12*8 && a->x <= 17*8 && a->name == ACTOR_PLAYER) {
           actor.roomy++;
           vbright = 0;
           num_bullets = 0;
@@ -476,7 +476,7 @@ void move_actor(struct Actor* a, byte joystick) {
         if(a->yy > ACTOR_MIN_Y){
           a->yy--;
           a->state = WALKING2;
-        } else if(actor.roomy > 0 && a->x >= 12*8 && a->x <= 17*8) {
+        } else if(actor.roomy > 0 && a->x >= 12*8 && a->x <= 17*8 && a->name == ACTOR_PLAYER) {
           actor.roomy--;
           vbright = 0;
           num_bullets = 0;
@@ -506,16 +506,20 @@ void move_monsters(){
   for (i=0; i<rooms[actor.roomx][actor.roomy].numMonsters; i++) {
       if(rand8() > 200 && rooms[actor.roomx][actor.roomy].monsters[i].life > 0){
         if (rooms[actor.roomx][actor.roomy].monsters[i].x > actor.x){
-        move_actor(&rooms[actor.roomx][actor.roomy].monsters[i], 64); // Esquerda
+          move_actor(&rooms[actor.roomx][actor.roomy].monsters[i], 64); // Esquerda
+          move_actor(&rooms[actor.roomx][actor.roomy].monsters[i], 64); // more speed
         }
         else if (rooms[actor.roomx][actor.roomy].monsters[i].x < actor.x){
           move_actor(&rooms[actor.roomx][actor.roomy].monsters[i], 128); // Direita
+          move_actor(&rooms[actor.roomx][actor.roomy].monsters[i], 128);
         }
         if (rooms[actor.roomx][actor.roomy].monsters[i].yy > actor.yy){
           move_actor(&rooms[actor.roomx][actor.roomy].monsters[i], 32); // Baixo
+          move_actor(&rooms[actor.roomx][actor.roomy].monsters[i], 32);
         }
         else if (rooms[actor.roomx][actor.roomy].monsters[i].yy < actor.yy){
           move_actor(&rooms[actor.roomx][actor.roomy].monsters[i], 16); // Cima
+          move_actor(&rooms[actor.roomx][actor.roomy].monsters[i], 16);
         }
       }
   }
@@ -547,7 +551,7 @@ bool check_collision(Actor* a) {
   // iterate through entire list of actors
   for (i=0; i<rooms[a->roomx][a->roomy].numMonsters; i++) {
     Actor* b = &rooms[a->roomx][a->roomy].monsters[i];
-    // actors must be on same floor and within 8 pixels
+    // actors must be on same room and within 8 pixels
     if (iabs(a->yy - b->yy) < 8 && 
         iabs(a->x - b->x) < 8 
         && rooms[actor.roomx][actor.roomy].monsters[i].life > 0) {
@@ -608,13 +612,21 @@ void createTraps(){
   byte i;
   byte j;
   byte k;
+  byte mx;
+  byte my;
   
   for (i=0; i<MAX_X_ROOMS; i++) {
     for (j=0; j<MAX_Y_ROOMS; j++) {
-      rooms[i][j].numTraps = rndint(3,4);
+      rooms[i][j].numTraps = rndint(4,6);
       for (k=0; k<rooms[i][j].numTraps; k++) {
-        rooms[i][j].xt[k] = rndint(ACTOR_MIN_X + 20, ACTOR_MAX_X - 20);
-  	rooms[i][j].yt[k] = rndint(ACTOR_MIN_Y + 20, ACTOR_MAX_Y - 20);
+        mx = rndint(ACTOR_MIN_X + 20, ACTOR_MAX_X - 20);
+        my = rndint(ACTOR_MIN_Y + 20, ACTOR_MAX_Y - 20);
+        while(iabs(actor.yy - (208 - my)) < 8 || iabs(actor.x - mx) < 8) {
+          mx = rndint(ACTOR_MIN_X + 20, ACTOR_MAX_X - 20);
+          my = rndint(ACTOR_MIN_Y + 20, ACTOR_MAX_Y - 20);
+        }
+        rooms[i][j].xt[k] = mx;
+  	rooms[i][j].yt[k] = my;
       }
     }
   }
@@ -625,15 +637,23 @@ void createMonsters(){
   byte i;
   byte j;
   byte k;
+  byte mx;
+  byte my;
   
   for (i=0; i<MAX_X_ROOMS; i++) {
     for (j=0; j<MAX_Y_ROOMS; j++) {
-      rooms[i][j].numMonsters = rndint(2,5);
+      rooms[i][j].numMonsters = rndint(4,6);
       for (k=0; k<rooms[i][j].numMonsters; k++) {
         rooms[i][j].monsters[k].state = STANDING;
   	rooms[i][j].monsters[k].name = ACTOR_ENEMY;
-        rooms[i][j].monsters[k].x = rndint(ACTOR_MIN_X + 20, ACTOR_MAX_X - 20);
-        rooms[i][j].monsters[k].yy = rndint(ACTOR_MIN_Y + 20, ACTOR_MAX_Y - 20);
+        mx = rndint(ACTOR_MIN_X + 20, ACTOR_MAX_X - 20);
+        my = rndint(ACTOR_MIN_Y + 20, ACTOR_MAX_Y - 20);
+        while(iabs(actor.yy - my) < 8 || iabs(actor.x - mx) < 8) {
+          mx = rndint(ACTOR_MIN_X + 20, ACTOR_MAX_X - 20);
+          my = rndint(ACTOR_MIN_Y + 20, ACTOR_MAX_Y - 20);
+        }
+        rooms[i][j].monsters[k].x = mx;
+        rooms[i][j].monsters[k].yy = my;
         rooms[i][j].monsters[k].roomx = i;
         rooms[i][j].monsters[k].roomy = j;
         rooms[i][j].monsters[k].life = 3;
