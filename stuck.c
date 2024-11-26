@@ -1,4 +1,6 @@
-/* Jogo modificado com base no jogo Climber Gamer da plataforma 8bitworkshop
+/* Jogo Stuck desenvolvido pelo Grupo 4 (Daniel, Pedro e Jailson).
+
+O jogo foi criado a partir de modificações do jogo Climber Gamer da plataforma 8bitworkshop
 */
 
 #include <stdlib.h>
